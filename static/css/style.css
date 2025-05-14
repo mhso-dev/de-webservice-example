@@ -1,0 +1,68 @@
+/* 전역 스타일 */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* 상품 카드 스타일 */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-price {
+    font-weight: bold;
+    color: #dc3545;
+}
+
+/* 장바구니 스타일 */
+.cart-item-img {
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: cover;
+}
+
+/* 리뷰 스타일 */
+.star-rating {
+    color: #ffc107;
+}
+
+.review-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* 별점 선택 */
+.rating-input {
+    display: none;
+}
+
+.rating-star {
+    cursor: pointer;
+    color: #ccc;
+}
+
+.rating-star i {
+    transition: color 0.2s ease;
+}
+
+.rating-star i.active {
+    color: #ffc107;
+}
+
+/* 기타 유틸리티 */
+.bg-light-gray {
+    background-color: #f8f9fa;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+} 

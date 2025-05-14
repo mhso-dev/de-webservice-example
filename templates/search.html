@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}검색 결과: {{ query }} - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 사이드바 (필터링 및 카테고리) -->
+    <div class="col-lg-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">카테고리</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ url_for('main.search', q=query) }}" class="list-group-item list-group-item-action {% if not category_id %}active{% endif %}">
+                        모든 카테고리
+                    </a>
+                    {% for category in categories %}
+                        {% if not category.parent_id %}
+                            <a href="{{ url_for('main.search', q=query, category=category.id) }}" 
+                               class="list-group-item list-group-item-action {% if category_id == category.id %}active{% endif %}">
+                                {{ category.name }}
+                            </a>
+                            {% for subcategory in category.subcategories %}
+                                <a href="{{ url_for('main.search', q=query, category=subcategory.id) }}" 
+                                   class="list-group-item list-group-item-action ps-4 {% if category_id == subcategory.id %}active{% endif %}">
+                                    - {{ subcategory.name }}
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 검색 결과 -->
+    <div class="col-lg-9">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        {% if query %}
+                            '{{ query }}' 검색 결과
+                        {% else %}
+                            전체 검색 결과
+                        {% endif %}
+                    </h4>
+                    <span class="badge bg-secondary">{{ products.total }}개 항목</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if products.items %}
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        {% for product in products.items %}
+                            <div class="col">
+                                <div class="card h-100">
+                                    {% if product.image_url %}
+                                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                                    {% else %}
+                                        <div class="bg-light text-center p-5">
+                                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ product.name }}</h5>
+                                        <p class="card-text text-truncate-2">{{ product.description }}</p>
+                                        <p class="card-text product-price">{{ "%.2f"|format(product.price) }}원</p>
+                                    </div>
+                                    <div class="card-footer d-flex justify-content-between align-items-center">
+                                        <a href="{{ url_for('products.detail', product_id=product.id) }}" class="btn btn-sm btn-primary">상세보기</a>
+                                        {% if current_user.is_authenticated %}
+                                            <form action="{{ url_for('main.add_to_cart') }}" method="post">
+                                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-cart-plus"></i> 담기
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- 페이지네이션 -->
+                    {% if products.pages > 1 %}
+                        <nav aria-label="검색 결과 페이지 탐색" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if products.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.search', q=query, category=category_id, page=products.prev_num) }}">
+                                            이전
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">이전</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                    {% if page_num %}
+                                        {% if page_num == products.page %}
+                                            <li class="page-item active" aria-current="page">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('main.search', q=query, category=category_id, page=page_num) }}">
+                                                    {{ page_num }}
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#">...</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if products.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.search', q=query, category=category_id, page=products.next_num) }}">
+                                            다음
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">다음</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        {% if query %}
+                            '{{ query }}'에 대한 검색 결과가 없습니다.
+                        {% else %}
+                            검색 결과가 없습니다.
+                        {% endif %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">홈으로 돌아가기</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

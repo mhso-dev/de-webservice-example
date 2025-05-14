@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}회원가입 - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">회원가입</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('auth.register') }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">사용자명 *</label>
+                                <input type="text" class="form-control" id="username" name="username" required autofocus>
+                                <div class="form-text">영문, 숫자, 밑줄(_)만 사용 가능합니다.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">이메일 *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">비밀번호 *</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="form-text">8자 이상, 영문, 숫자, 특수문자를 포함해야 합니다.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">비밀번호 확인 *</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label">이름</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label">성</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="agree_terms" required>
+                        <label class="form-check-label" for="agree_terms">이용약관 및 개인정보 처리방침에 동의합니다.</label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">회원가입</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">이미 계정이 있으신가요? <a href="{{ url_for('auth.login') }}">로그인</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

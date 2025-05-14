@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">홈</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('products.index') }}">상품</a></li>
+                {% if product.category %}
+                    <li class="breadcrumb-item"><a href="{{ url_for('products.category', category_id=product.category.id) }}">{{ product.category.name }}</a></li>
+                {% endif %}
+                <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 상품 이미지 및 기본 정보 -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="row g-0">
+                <div class="col-md-5">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="img-fluid rounded-start" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-light text-center d-flex align-items-center justify-content-center h-100" style="min-height: 300px;">
+                            <i class="bi bi-image" style="font-size: 5rem;"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-7">
+                    <div class="card-body">
+                        <h3 class="card-title mb-3">{{ product.name }}</h3>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                {% for i in range(5) %}
+                                    {% if i < avg_rating|int %}
+                                        <i class="bi bi-star-fill star-rating me-1"></i>
+                                    {% elif i < avg_rating and i > avg_rating|int %}
+                                        <i class="bi bi-star-half star-rating me-1"></i>
+                                    {% else %}
+                                        <i class="bi bi-star star-rating me-1"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="ms-2">{{ "%.1f"|format(avg_rating) }} / 5.0 ({{ reviews|length }}개 리뷰)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="card-text fs-5 fw-bold product-price">{{ "%.2f"|format(product.price) }}원</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="card-text">
+                                {{ product.description }}
+                            </p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    카테고리: 
+                                    {% if product.category %}
+                                        <a href="{{ url_for('products.category', category_id=product.category.id) }}">{{ product.category.name }}</a>
+                                    {% else %}
+                                        미분류
+                                    {% endif %}
+                                </small>
+                            </p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="card-text">
+                                <span class="badge {% if product.stock > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if product.stock > 0 %}
+                                        재고 있음 ({{ product.stock }}개)
+                                    {% else %}
+                                        품절
+                                    {% endif %}
+                                </span>
+                            </p>
+                        </div>
+                        
+                        {% if current_user.is_authenticated %}
+                            <div class="d-grid gap-2">
+                                <form action="{{ url_for('main.add_to_cart') }}" method="post">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="input-group">
+                                                <button type="button" class="btn btn-outline-secondary btn-decrease">-</button>
+                                                <input type="number" class="form-control text-center quantity-input" name="quantity" value="1" min="1" max="{{ product.stock }}">
+                                                <button type="button" class="btn btn-outline-secondary btn-increase">+</button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                                            <button type="submit" class="btn btn-primary w-100" {% if product.stock <= 0 %}disabled{% endif %}>
+                                                <i class="bi bi-cart-plus"></i> 장바구니에 담기
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <a href="{{ url_for('auth.login') }}">로그인</a>하여 장바구니에 담을 수 있습니다.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 사이드바 (관련 상품) -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">관련 상품</h5>
+            </div>
+            <div class="card-body">
+                {% if related_products %}
+                    <div class="list-group">
+                        {% for related in related_products %}
+                            <a href="{{ url_for('products.detail', product_id=related.id) }}" class="list-group-item list-group-item-action d-flex">
+                                <div class="me-3" style="width: 60px; height: 60px; overflow: hidden;">
+                                    {% if related.image_url %}
+                                        <img src="{{ related.image_url }}" alt="{{ related.name }}" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light d-flex align-items-center justify-content-center h-100">
+                                            <i class="bi bi-image"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{{ related.name }}</h6>
+                                    <p class="mb-1 text-primary fw-bold">{{ "%.2f"|format(related.price) }}원</p>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        관련 상품이 없습니다.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 리뷰 섹션 -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">상품 리뷰 ({{ reviews|length }})</h5>
+            </div>
+            <div class="card-body">
+                <!-- 리뷰 목록 -->
+                <div class="review-container mb-4">
+                    {% if reviews %}
+                        <div class="list-group">
+                            {% for review in reviews %}
+                                <div class="list-group-item {% if current_user.is_authenticated and review.user_id == current_user.id %}border-primary{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <strong>{{ review.user.username }}</strong>
+                                            <span class="ms-2 text-muted small">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                            {% if current_user.is_authenticated and review.user_id == current_user.id %}
+                                                <span class="badge bg-primary ms-2">내 리뷰</span>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            {% for i in range(5) %}
+                                                {% if i < review.rating %}
+                                                    <i class="bi bi-star-fill star-rating"></i>
+                                                {% else %}
+                                                    <i class="bi bi-star star-rating"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <p class="mb-0">{{ review.comment }}</p>
+                                    {% if current_user.is_authenticated and review.user_id == current_user.id %}
+                                        <div class="mt-2 text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary edit-review-btn" 
+                                                    data-rating="{{ review.rating }}" 
+                                                    data-comment="{{ review.comment }}">
+                                                <i class="bi bi-pencil-square"></i> 리뷰 수정
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-review-btn"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteReviewModal"
+                                                    data-review-id="{{ review.id }}">
+                                                <i class="bi bi-trash"></i> 리뷰 삭제
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            아직 작성된 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 리뷰 작성 폼 -->
+                {% if current_user.is_authenticated %}
+                    {% if has_purchased or user_review %}
+                        <div class="mb-4" id="review-form-section">
+                            <h5 class="border-top pt-3">{% if user_review %}리뷰 수정{% else %}리뷰 작성{% endif %}</h5>
+                            <form action="{{ url_for('products.add_review', product_id=product.id) }}" method="post" id="review-form">
+                                <div class="mb-3">
+                                    <label for="rating" class="form-label">평점</label>
+                                    <div class="rating-container">
+                                        <input type="hidden" id="rating" name="rating" value="{{ user_review.rating if user_review else 5 }}">
+                                        <div class="d-flex flex-row-reverse">
+                                            {% for i in range(5, 0, -1) %}
+                                                <label class="rating-star me-1 fs-3" title="{{ i }}점">
+                                                    <i class="bi bi-star-fill {% if user_review and user_review.rating >= i %}active{% endif %}"></i>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">리뷰 내용</label>
+                                    <textarea class="form-control" id="comment" name="comment" rows="3">{{ user_review.comment if user_review else '' }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if user_review %}
+                                        리뷰 수정
+                                    {% else %}
+                                        리뷰 등록
+                                    {% endif %}
+                                </button>
+                                {% if user_review %}
+                                    <button type="button" class="btn btn-outline-secondary" id="cancel-edit-btn">취소</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            구매한 상품에 대해서만 리뷰를 작성할 수 있습니다.
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 리뷰 삭제 확인 모달 -->
+<div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteReviewModalLabel">리뷰 삭제 확인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 이 리뷰를 삭제하시겠습니까?</p>
+                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form action="{{ url_for('products.delete_review', product_id=product.id) }}" method="post" id="delete-review-form">
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 수량 버튼 이벤트 리스너
+        const decreaseBtn = document.querySelector('.btn-decrease');
+        const increaseBtn = document.querySelector('.btn-increase');
+        const quantityInput = document.querySelector('.quantity-input');
+        
+        if (decreaseBtn && increaseBtn && quantityInput) {
+            decreaseBtn.addEventListener('click', function() {
+                let value = parseInt(quantityInput.value);
+                if (value > 1) {
+                    quantityInput.value = value - 1;
+                }
+            });
+            
+            increaseBtn.addEventListener('click', function() {
+                let value = parseInt(quantityInput.value);
+                let maxStock = parseInt("{{ product.stock }}");
+                if (value < maxStock) {
+                    quantityInput.value = value + 1;
+                }
+            });
+        }
+        
+        // 리뷰 편집 버튼 이벤트 리스너
+        const editButtons = document.querySelectorAll('.edit-review-btn');
+        const reviewForm = document.getElementById('review-form');
+        const ratingInput = document.getElementById('rating');
+        const commentInput = document.getElementById('comment');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const reviewFormSection = document.getElementById('review-form-section');
+        
+        // 리뷰 삭제 버튼 이벤트 리스너
+        const deleteButtons = document.querySelectorAll('.delete-review-btn');
+        const deleteModal = document.getElementById('deleteReviewModal');
+        
+        if (editButtons.length > 0 && reviewForm) {
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const rating = this.getAttribute('data-rating');
+                    const comment = this.getAttribute('data-comment');
+                    
+                    // 폼 값 설정
+                    ratingInput.value = rating;
+                    commentInput.value = comment;
+                    
+                    // 별점 UI 업데이트
+                    const stars = document.querySelectorAll('.rating-star i');
+                    stars.forEach((star, index) => {
+                        const starValue = 5 - index;
+                        if (starValue <= rating) {
+                            star.classList.add('active');
+                            star.style.color = '#ffc107';
+                        } else {
+                            star.classList.remove('active');
+                            star.style.color = '#ccc';
+                        }
+                    });
+                    
+                    // 폼으로 스크롤
+                    reviewFormSection.scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        }
+        
+        // 리뷰 삭제 기능
+        if (deleteButtons.length > 0 && deleteModal) {
+            // 모달이 표시될 때 이벤트
+            deleteModal.addEventListener('shown.bs.modal', function() {
+                // 모달 내부의 삭제 버튼에 포커스
+                deleteModal.querySelector('.btn-danger').focus();
+            });
+        }
+        
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', function() {
+                // 초기 값으로 리셋
+                ratingInput.value = "{{ user_review.rating if user_review else 5 }}";
+                commentInput.value = "{{ user_review.comment if user_review else '' }}";
+                
+                // 별점 UI 리셋
+                const stars = document.querySelectorAll('.rating-star i');
+                const initialRating = parseInt("{{ user_review.rating if user_review else 5 }}");
+                stars.forEach((star, index) => {
+                    const starValue = 5 - index;
+                    if (starValue <= initialRating) {
+                        star.classList.add('active');
+                        star.style.color = '#ffc107';
+                    } else {
+                        star.classList.remove('active');
+                        star.style.color = '#ccc';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %} 

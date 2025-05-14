@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}장바구니 - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">장바구니</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 장바구니 상품 목록 -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">장바구니 상품</h5>
+            </div>
+            <div class="card-body">
+                {% if cart_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;">이미지</th>
+                                    <th>상품명</th>
+                                    <th style="width: 120px;">가격</th>
+                                    <th style="width: 150px;">수량</th>
+                                    <th style="width: 120px;">합계</th>
+                                    <th style="width: 80px;">삭제</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        {% if item.product.image_url %}
+                                            <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="cart-item-img">
+                                        {% else %}
+                                            <div class="bg-light text-center p-2">
+                                                <i class="bi bi-image"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('products.detail', product_id=item.product.id) }}" class="text-decoration-none">
+                                            {{ item.product.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ "%.2f"|format(item.product.price) }}원</td>
+                                    <td>
+                                        <form action="{{ url_for('main.add_to_cart') }}" method="post" class="quantity-form">
+                                            <div class="input-group">
+                                                <button type="button" class="btn btn-outline-secondary btn-decrease">-</button>
+                                                <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                                <input type="number" class="form-control text-center quantity-input" name="quantity" value="{{ item.quantity }}" 
+                                                       min="1" max="{{ item.product.stock }}" data-max-stock="{{ item.product.stock }}">
+                                                <button type="button" class="btn btn-outline-secondary btn-increase">+</button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                    <td>{{ "%.2f"|format(item.product.price * item.quantity) }}원</td>
+                                    <td>
+                                        <form action="{{ url_for('main.remove_from_cart') }}" method="post">
+                                            <input type="hidden" name="cart_item_id" value="{{ item.id }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-cart me-2"></i> 장바구니가 비어있습니다.
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('products.index') }}" class="btn btn-primary">
+                            쇼핑 계속하기
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            {% if cart_items %}
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('products.index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-1"></i> 쇼핑 계속하기
+                        </a>
+                        <a href="{{ url_for('main.checkout') }}" class="btn btn-success">
+                            <i class="bi bi-credit-card me-1"></i> 결제하기
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 주문 요약 및 금액 정보 -->
+    {% if cart_items %}
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">주문 요약</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th scope="row">상품 수량</th>
+                                <td class="text-end">{{ cart_items|length }}개</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">상품 금액</th>
+                                <td class="text-end">{{ "%.2f"|format(total) }}원</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">배송비</th>
+                                <td class="text-end">0원</td>
+                            </tr>
+                            <tr class="table-primary">
+                                <th scope="row">결제 예정 금액</th>
+                                <td class="text-end fw-bold">{{ "%.2f"|format(total) }}원</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.checkout') }}" class="btn btn-success">
+                            <i class="bi bi-credit-card me-1"></i> 결제하기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

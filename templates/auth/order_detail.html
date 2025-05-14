@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}주문 상세 정보 - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <!-- 사이드바 메뉴 -->
+        <div class="list-group shadow-sm">
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="bi bi-person me-2"></i>내 정보
+            </a>
+            <a href="{{ url_for('main.order_history') }}" class="list-group-item list-group-item-action">
+                <i class="bi bi-list-check me-2"></i>주문 내역
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="bi bi-geo-alt me-2"></i>배송지 관리
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="bi bi-key me-2"></i>비밀번호 변경
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">주문 상세 정보</h5>
+                <a href="{{ url_for('main.order_history') }}" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-arrow-left me-1"></i>주문 내역으로
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-primary mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">주문번호: {{ order.id }}</h6>
+                            <div>주문일시: {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                        </div>
+                        <div>
+                            {% if order.status == '배송완료' %}
+                                <span class="badge bg-success fs-6">{{ order.status }}</span>
+                            {% elif order.status == '배송중' %}
+                                <span class="badge bg-primary fs-6">{{ order.status }}</span>
+                            {% elif order.status == '결제완료' or order.status == '주문완료' %}
+                                <span class="badge bg-info fs-6">{{ order.status }}</span>
+                            {% elif order.status == '주문취소' %}
+                                <span class="badge bg-danger fs-6">{{ order.status }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">{{ order.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card mb-4 mb-md-0">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">주문 정보</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>주문자:</strong> {{ order.user.name }}</p>
+                                <p><strong>이메일:</strong> {{ order.user.email }}</p>
+                                <p><strong>연락처:</strong> {{ order.user.phone or '정보 없음' }}</p>
+                                <p><strong>결제금액:</strong> {{ "%.2f"|format(order.total_amount) }}원</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">배송 정보</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>배송지:</strong><br>
+                                    {{ order.shipping_address }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 주문 상품 목록 -->
+                <h5 class="border-bottom pb-2 mb-3">주문 상품</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">이미지</th>
+                                <th>상품명</th>
+                                <th class="text-center" style="width: 80px;">수량</th>
+                                <th class="text-end" style="width: 120px;">가격</th>
+                                <th class="text-end" style="width: 120px;">합계</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                            <tr>
+                                <td>
+                                    {% if item.product.image_url %}
+                                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light text-center" style="width: 60px; height: 60px;">
+                                            <i class="bi bi-image" style="font-size: 1.5rem; line-height: 60px;"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('products.detail', product_id=item.product.id) }}" class="text-decoration-none">
+                                        {{ item.product.name }}
+                                    </a>
+                                </td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end">{{ "%.2f"|format(item.price) }}원</td>
+                                <td class="text-end">{{ "%.2f"|format(item.price * item.quantity) }}원</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <th colspan="4" class="text-end">상품 금액</th>
+                                <td class="text-end">{{ "%.2f"|format(order.total_amount) }}원</td>
+                            </tr>
+                            <tr class="table-light">
+                                <th colspan="4" class="text-end">배송비</th>
+                                <td class="text-end">0원</td>
+                            </tr>
+                            <tr class="table-primary">
+                                <th colspan="4" class="text-end">총 결제금액</th>
+                                <td class="text-end fw-bold">{{ "%.2f"|format(order.total_amount) }}원</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 주문 상태가 배송 전일 때만 취소 버튼 표시 -->
+                {% if order.status in ['결제완료', '주문완료', '상품준비중'] %}
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                        <i class="bi bi-x-circle me-1"></i>주문 취소
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 주문 취소 모달 -->
+{% if order.status in ['결제완료', '주문완료', '상품준비중'] %}
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">주문 취소</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>주문번호 <strong>{{ order.id }}</strong>을(를) 취소하시겠습니까?</p>
+                <p class="text-danger">주문 취소 후에는 복구할 수 없습니다.</p>
+                
+                <form action="#" method="post" id="cancelOrderForm">
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">취소 사유</label>
+                        <select class="form-select" id="cancelReason" name="cancel_reason" required>
+                            <option value="">취소 사유 선택</option>
+                            <option value="단순 변심">단순 변심</option>
+                            <option value="상품 정보 상이">상품 정보와 다름</option>
+                            <option value="배송 지연">배송 지연</option>
+                            <option value="다른 상품 구매">다른 상품 구매</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="otherReasonContainer" style="display: none;">
+                        <label for="otherReason" class="form-label">기타 사유</label>
+                        <textarea class="form-control" id="otherReason" name="other_reason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="submit" form="cancelOrderForm" class="btn btn-danger">주문 취소하기</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 취소 사유가 '기타'일 때 추가 입력 필드 표시
+        const cancelReasonSelect = document.getElementById('cancelReason');
+        const otherReasonContainer = document.getElementById('otherReasonContainer');
+        
+        if (cancelReasonSelect && otherReasonContainer) {
+            cancelReasonSelect.addEventListener('change', function() {
+                if (this.value === '기타') {
+                    otherReasonContainer.style.display = 'block';
+                } else {
+                    otherReasonContainer.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

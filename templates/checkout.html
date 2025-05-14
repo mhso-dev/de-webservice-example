@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}결제하기 - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>결제하기</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 배송지 정보 및 결제 수단 선택 -->
+    <div class="col-lg-8">
+        <form action="{{ url_for('main.checkout') }}" method="post" id="checkout-form">
+            <!-- 배송지 정보 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">배송지 정보</h5>
+                </div>
+                <div class="card-body">
+                    {% if addresses %}
+                        <div class="mb-3">
+                            <label class="form-label">저장된 배송지</label>
+                            <select class="form-select" id="saved-address" name="address_id">
+                                <option value="">새 배송지 입력</option>
+                                {% for address in addresses %}
+                                    <option value="{{ address.id }}" 
+                                            data-name="{{ address.recipient_name }}"
+                                            data-phone="{{ address.phone }}"
+                                            data-address="{{ address.address }}"
+                                            data-postcode="{{ address.postcode }}">
+                                        {{ address.recipient_name }} - {{ address.address }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="recipient_name" class="form-label">받는 사람</label>
+                            <input type="text" class="form-control" id="recipient_name" name="recipient_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">연락처</label>
+                            <input type="text" class="form-control" id="phone" name="phone" placeholder="010-0000-0000" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="postcode" class="form-label">우편번호</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="postcode" name="postcode" required>
+                            <button type="button" class="btn btn-outline-secondary" id="search-postcode">검색</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">주소</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address_detail" class="form-label">상세주소</label>
+                        <input type="text" class="form-control" id="address_detail" name="address_detail">
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="save_address" name="save_address" value="1">
+                        <label class="form-check-label" for="save_address">
+                            이 배송지 정보를 저장
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 결제 수단 선택 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">결제 수단</h5>
+                </div>
+                <div class="card-body">
+                    <div class="payment-methods">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card" checked>
+                            <label class="form-check-label" for="payment_card">
+                                <i class="bi bi-credit-card me-2"></i>신용카드
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payment_bank" value="bank">
+                            <label class="form-check-label" for="payment_bank">
+                                <i class="bi bi-bank me-2"></i>계좌이체
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payment_mobile" value="mobile">
+                            <label class="form-check-label" for="payment_mobile">
+                                <i class="bi bi-phone me-2"></i>휴대폰 결제
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 주문 버튼 (모바일에서만 표시) -->
+            <div class="d-lg-none">
+                <div class="d-grid gap-2 mb-4">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle me-2"></i>주문하기
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 주문 요약 및 최종 금액 정보 -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4 sticky-top" style="top: 15px;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">주문 요약</h5>
+            </div>
+            <div class="card-body">
+                <div class="cart-summary">
+                    {% if cart_items %}
+                        <div class="mb-3">
+                            <strong>{{ cart_items|length }}개</strong> 상품
+                        </div>
+                        <div class="cart-items-summary">
+                            {% for item in cart_items %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div>
+                                        <span class="badge bg-primary rounded-pill">{{ item.quantity }}</span>
+                                        {{ item.product.name }}
+                                    </div>
+                                    <span>{{ "%.2f"|format(item.product.price * item.quantity) }}원</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            장바구니가 비어 있습니다.
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <table class="table mt-3">
+                    <tbody>
+                        <tr>
+                            <th scope="row">상품 금액</th>
+                            <td class="text-end">{{ "%.2f"|format(total) }}원</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">배송비</th>
+                            <td class="text-end">0원</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <th scope="row">결제 금액</th>
+                            <td class="text-end fw-bold">{{ "%.2f"|format(total) }}원</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 주문 동의 사항 -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="agree-terms" required>
+                    <label class="form-check-label" for="agree-terms">
+                        주문 내용을 확인하였으며, 결제에 동의합니다.
+                    </label>
+                </div>
+                
+                <!-- PC에서 주문 버튼 -->
+                <div class="d-none d-lg-block">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg" form="checkout-form">
+                            <i class="bi bi-check-circle me-2"></i>주문하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 저장된 배송지 선택 시 폼 자동 채우기
+        const savedAddressSelect = document.getElementById('saved-address');
+        if (savedAddressSelect) {
+            savedAddressSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                
+                if (this.value) {
+                    document.getElementById('recipient_name').value = selectedOption.dataset.name;
+                    document.getElementById('phone').value = selectedOption.dataset.phone;
+                    document.getElementById('address').value = selectedOption.dataset.address;
+                    document.getElementById('postcode').value = selectedOption.dataset.postcode;
+                } else {
+                    document.getElementById('recipient_name').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('address').value = '';
+                    document.getElementById('postcode').value = '';
+                }
+            });
+        }
+        
+        // 주문 버튼 활성화
+        const agreeCheckbox = document.getElementById('agree-terms');
+        const orderForm = document.getElementById('checkout-form');
+        
+        orderForm.addEventListener('submit', function(event) {
+            if (!agreeCheckbox.checked) {
+                event.preventDefault();
+                alert('주문 동의 사항에 체크해주세요.');
+                agreeCheckbox.focus();
+            }
+        });
+    });
+</script>
+{% endblock %} 

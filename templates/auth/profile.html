@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}내 프로필 - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">프로필 정보</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="avatar-container mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 5rem;"></i>
+                    </div>
+                    <h5>{{ current_user.username }}</h5>
+                    <p class="text-muted">{{ current_user.email }}</p>
+                </div>
+                
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th scope="row">이름</th>
+                            <td>{{ current_user.first_name or '설정되지 않음' }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">성</th>
+                            <td>{{ current_user.last_name or '설정되지 않음' }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">가입일</th>
+                            <td>{{ current_user.created_at.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square"></i> 프로필 수정
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">최근 주문 내역</h4>
+            </div>
+            <div class="card-body">
+                {% if current_user.orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>주문 번호</th>
+                                    <th>주문일</th>
+                                    <th>합계</th>
+                                    <th>상태</th>
+                                    <th>조회</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in current_user.orders[:5] %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ "%.2f"|format(order.total_amount) }}원</td>
+                                    <td>
+                                        {% if order.status == 'pending' %}
+                                            <span class="badge bg-warning">대기중</span>
+                                        {% elif order.status == 'paid' %}
+                                            <span class="badge bg-info">결제완료</span>
+                                        {% elif order.status == 'shipped' %}
+                                            <span class="badge bg-primary">배송중</span>
+                                        {% elif order.status == 'delivered' %}
+                                            <span class="badge bg-success">배송완료</span>
+                                        {% elif order.status == 'cancelled' %}
+                                            <span class="badge bg-danger">취소됨</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('main.order_confirmation', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                            상세보기
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <a href="{{ url_for('main.order_history') }}" class="btn btn-outline-primary">
+                            모든 주문 내역 보기
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        아직 주문 내역이 없습니다.
+                    </div>
+                    <div class="text-center">
+                        <a href="{{ url_for('products.index') }}" class="btn btn-primary">
+                            상품 보러가기
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">장바구니</h4>
+            </div>
+            <div class="card-body">
+                {% if current_user.cart_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>상품명</th>
+                                    <th>가격</th>
+                                    <th>수량</th>
+                                    <th>합계</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in current_user.cart_items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ "%.2f"|format(item.product.price) }}원</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ "%.2f"|format(item.product.price * item.quantity) }}원</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <a href="{{ url_for('main.cart') }}" class="btn btn-outline-primary">
+                            장바구니로 이동
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        장바구니가 비어있습니다.
+                    </div>
+                    <div class="text-center">
+                        <a href="{{ url_for('products.index') }}" class="btn btn-primary">
+                            상품 보러가기
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

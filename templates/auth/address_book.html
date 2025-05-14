@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}배송지 관리 - 데이터 엔지니어링 쇼핑몰{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <!-- 사이드바 메뉴 -->
+        <div class="list-group shadow-sm">
+            <a href="{{ url_for('auth.profile') }}" class="list-group-item list-group-item-action">
+                <i class="bi bi-person me-2"></i>내 정보
+            </a>
+            <a href="{{ url_for('auth.order_history') }}" class="list-group-item list-group-item-action">
+                <i class="bi bi-list-check me-2"></i>주문 내역
+            </a>
+            <a href="{{ url_for('auth.address_book') }}" class="list-group-item list-group-item-action active">
+                <i class="bi bi-geo-alt me-2"></i>배송지 관리
+            </a>
+            <a href="{{ url_for('auth.password_change') }}" class="list-group-item list-group-item-action">
+                <i class="bi bi-key me-2"></i>비밀번호 변경
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">배송지 관리</h5>
+                <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                    <i class="bi bi-plus-circle me-1"></i>새 배송지 추가
+                </button>
+            </div>
+            <div class="card-body">
+                {% if addresses %}
+                    <div class="row">
+                        {% for address in addresses %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 {% if address.is_default %}border-primary{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ address.recipient_name }}</h6>
+                                        <div>
+                                            {% if address.is_default %}
+                                                <span class="badge bg-primary">기본 배송지</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="card-text mb-1">{{ address.phone }}</p>
+                                    <p class="card-text mb-1">
+                                        {{ address.address }}
+                                        {% if address.address_detail %}
+                                            {{ address.address_detail }}
+                                        {% endif %}
+                                    </p>
+                                    <p class="card-text mb-0">
+                                        {{ address.postcode }}
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            {% if not address.is_default %}
+                                                <form action="{{ url_for('auth.set_default_address') }}" method="post" class="d-inline">
+                                                    <input type="hidden" name="address_id" value="{{ address.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                        기본 배송지로 설정
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary edit-address-btn"
+                                                    data-address-id="{{ address.id }}"
+                                                    data-recipient-name="{{ address.recipient_name }}"
+                                                    data-phone="{{ address.phone }}"
+                                                    data-postcode="{{ address.postcode }}"
+                                                    data-address="{{ address.address }}"
+                                                    data-address-detail="{{ address.address_detail or '' }}">
+                                                수정
+                                            </button>
+                                            {% if not address.is_default %}
+                                                <form action="{{ url_for('auth.delete_address') }}" method="post" class="d-inline">
+                                                    <input type="hidden" name="address_id" value="{{ address.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                            onclick="return confirm('정말 삭제하시겠습니까?');">
+                                                        삭제
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>등록된 배송지가 없습니다.
+                    </div>
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                            <i class="bi bi-plus-circle me-1"></i>새 배송지 추가
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 새 배송지 추가 모달 -->
+<div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAddressModalLabel">새 배송지 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('auth.add_address') }}" method="post" id="addAddressForm">
+                    <div class="mb-3">
+                        <label for="recipient_name" class="form-label">받는 사람</label>
+                        <input type="text" class="form-control" id="recipient_name" name="recipient_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">연락처</label>
+                        <input type="text" class="form-control" id="phone" name="phone" placeholder="010-0000-0000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="postcode" class="form-label">우편번호</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="postcode" name="postcode" required>
+                            <button type="button" class="btn btn-outline-secondary" id="search-postcode">검색</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">주소</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address_detail" class="form-label">상세주소</label>
+                        <input type="text" class="form-control" id="address_detail" name="address_detail">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_default" name="is_default" value="1">
+                        <label class="form-check-label" for="is_default">
+                            기본 배송지로 설정
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="submit" form="addAddressForm" class="btn btn-primary">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 배송지 수정 모달 -->
+<div class="modal fade" id="editAddressModal" tabindex="-1" aria-labelledby="editAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAddressModalLabel">배송지 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('auth.edit_address') }}" method="post" id="editAddressForm">
+                    <input type="hidden" id="edit_address_id" name="address_id">
+                    <div class="mb-3">
+                        <label for="edit_recipient_name" class="form-label">받는 사람</label>
+                        <input type="text" class="form-control" id="edit_recipient_name" name="recipient_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_phone" class="form-label">연락처</label>
+                        <input type="text" class="form-control" id="edit_phone" name="phone" placeholder="010-0000-0000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_postcode" class="form-label">우편번호</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="edit_postcode" name="postcode" required>
+                            <button type="button" class="btn btn-outline-secondary" id="edit-search-postcode">검색</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_address" class="form-label">주소</label>
+                        <input type="text" class="form-control" id="edit_address" name="address" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_address_detail" class="form-label">상세주소</label>
+                        <input type="text" class="form-control" id="edit_address_detail" name="address_detail">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="submit" form="editAddressForm" class="btn btn-primary">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 배송지 수정 버튼 클릭 시 모달에 데이터 채우기
+        const editButtons = document.querySelectorAll('.edit-address-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const addressId = this.dataset.addressId;
+                const recipientName = this.dataset.recipientName;
+                const phone = this.dataset.phone;
+                const postcode = this.dataset.postcode;
+                const address = this.dataset.address;
+                const addressDetail = this.dataset.addressDetail;
+                
+                document.getElementById('edit_address_id').value = addressId;
+                document.getElementById('edit_recipient_name').value = recipientName;
+                document.getElementById('edit_phone').value = phone;
+                document.getElementById('edit_postcode').value = postcode;
+                document.getElementById('edit_address').value = address;
+                document.getElementById('edit_address_detail').value = addressDetail;
+                
+                const editAddressModal = new bootstrap.Modal(document.getElementById('editAddressModal'));
+                editAddressModal.show();
+            });
+        });
+    });
+</script>
+{% endblock %} 

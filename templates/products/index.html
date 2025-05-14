@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if selected_category %}
+        {{ selected_category.name }} - 데이터 엔지니어링 쇼핑몰
+    {% else %}
+        모든 상품 - 데이터 엔지니어링 쇼핑몰
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 사이드바 (필터링 및 카테고리) -->
+    <div class="col-lg-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">카테고리</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ url_for('products.index') }}" class="list-group-item list-group-item-action {% if not selected_category %}active{% endif %}">
+                        모든 카테고리
+                    </a>
+                    {% for category in categories %}
+                        {% if not category.parent_id %}
+                            <a href="{{ url_for('products.category', category_id=category.id) }}" 
+                               class="list-group-item list-group-item-action {% if selected_category and selected_category.id == category.id %}active{% endif %}">
+                                {{ category.name }}
+                            </a>
+                            {% for subcategory in category.subcategories %}
+                                <a href="{{ url_for('products.category', category_id=subcategory.id) }}" 
+                                   class="list-group-item list-group-item-action ps-4 {% if selected_category and selected_category.id == subcategory.id %}active{% endif %}">
+                                    - {{ subcategory.name }}
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">필터</h5>
+            </div>
+            <div class="card-body">
+                <h6>가격대</h6>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="price_range_1">
+                        <label class="form-check-label" for="price_range_1">
+                            ~50,000원
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="price_range_2">
+                        <label class="form-check-label" for="price_range_2">
+                            50,000원~100,000원
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="price_range_3">
+                        <label class="form-check-label" for="price_range_3">
+                            100,000원~500,000원
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="price_range_4">
+                        <label class="form-check-label" for="price_range_4">
+                            500,000원~
+                        </label>
+                    </div>
+                </div>
+                
+                <h6>재고 여부</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="in_stock">
+                    <label class="form-check-label" for="in_stock">
+                        재고 있음
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 상품 목록 -->
+    <div class="col-lg-9">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        {% if selected_category %}
+                            {{ selected_category.name }}
+                        {% else %}
+                            모든 상품
+                        {% endif %}
+                    </h4>
+                    <div class="d-flex align-items-center">
+                        <label for="sort" class="me-2">정렬:</label>
+                        <select id="sort" class="form-select form-select-sm" onchange="changeSort(this)">
+                            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>최신순</option>
+                            <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>가격 낮은순</option>
+                            <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>가격 높은순</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if products.items %}
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        {% for product in products.items %}
+                            <div class="col">
+                                <div class="card h-100">
+                                    {% if product.image_url %}
+                                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                                    {% else %}
+                                        <div class="bg-light text-center p-5">
+                                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ product.name }}</h5>
+                                        <p class="card-text text-truncate-2">{{ product.description }}</p>
+                                        <p class="card-text product-price">{{ "%.2f"|format(product.price) }}원</p>
+                                    </div>
+                                    <div class="card-footer d-flex justify-content-between align-items-center">
+                                        <a href="{{ url_for('products.detail', product_id=product.id) }}" class="btn btn-sm btn-primary">상세보기</a>
+                                        {% if current_user.is_authenticated %}
+                                            <form action="{{ url_for('main.add_to_cart') }}" method="post">
+                                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-cart-plus"></i> 담기
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- 페이지네이션 -->
+                    {% if products.pages > 1 %}
+                        <nav aria-label="상품 페이지 탐색" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if products.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('products.index', page=products.prev_num, category=selected_category.id if selected_category else None, sort=sort) }}">
+                                            이전
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">이전</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                    {% if page_num %}
+                                        {% if page_num == products.page %}
+                                            <li class="page-item active" aria-current="page">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('products.index', page=page_num, category=selected_category.id if selected_category else None, sort=sort) }}">
+                                                    {{ page_num }}
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#">...</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if products.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('products.index', page=products.next_num, category=selected_category.id if selected_category else None, sort=sort) }}">
+                                            다음
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">다음</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        {% if selected_category %}
+                            이 카테고리에 상품이 없습니다.
+                        {% else %}
+                            등록된 상품이 없습니다.
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

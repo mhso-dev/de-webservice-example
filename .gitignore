@@ -1,0 +1,32 @@
+# 환경 변수 파일
+.env
+
+# 로그 파일
+/logs/*
+!logs/.gitkeep
+
+# 가상환경
+venv/
+env/
+.venv/
+.env/
+
+# 파이썬 캐시 파일
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE 관련 파일
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 기타 파일
+.DS_Store
+*.bak 
